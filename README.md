@@ -1,48 +1,32 @@
-# DiszkretPartner – közös backend (2 oldal + operátorok + Stripe + real-time)
+# dating backend (Render)
 
-Node.js (Express) + Socket.IO + Postgres backend, amit Renderre tudsz kirakni, miközben a frontend oldalak Netlify-n futnak.
+Ez a csomag Render **File Upload** módban is működik (nincs benne extra gyökérmappa).
+A korábbi hibád: `Cannot find module .../src/index.js` akkor történik, ha a Renderre feltöltött csomagban a `src/` mappa nem a projekt gyökerében van.
 
-## Mit tud
-- 2 (vagy több) oldal kezelése **X-Site-Key** alapján (pl. `forrorandi`, `szerelmesszivek`).
-- Regisztráció, bejelentkezés.
-- Kredit rendszer (üzenet küldés = kredit levonás).
-- Stripe checkout + webhook (kredit jóváírás).
-- Operátor/supervisor login + inbox + válasz.
-- **Real-time** Socket.IO események (új user, új üzenet, hozzárendelés).
+## Render beállítás (minimál)
+1. Render → New → Web Service (fizetős plan)
+2. Feltöltés: a ZIP tartalmát töltsd fel úgy, hogy a `package.json` **a gyökérben** legyen.
+3. Build Command: `npm install`
+4. Start Command: `npm start`
 
-## Gyors indulás (lokál)
-1) `npm i`
-2) Másold `.env.example` -> `.env` és töltsd ki a `DATABASE_URL`-t.
-3) `npm run dev`
+## Kötelező Environment változók
+- DATABASE_URL  (Render Postgresból)
+- JWT_SECRET
+- CORS_ORIGINS  (a két Netlify domain)
 
-## Render deploy
-- Hozz létre egy **Postgres** adatbázist.
-- Web Service: build `npm i`, start `npm start`.
-- Állítsd be az env változókat a `.env.example` alapján.
+Stripe-hoz:
+- STRIPE_SECRET_KEY
+- STRIPE_WEBHOOK_SECRET
+- STRIPE_SUCCESS_URL = https://dating-2-7jsh.onrender.com/stripe/success
+- STRIPE_CANCEL_URL  = https://dating-2-7jsh.onrender.com/stripe/cancel
+- SITE_FORRORANDI_URL = https://forrorandi.netlify.app/#credits
+- SITE_SZERELMESSZIVEK_URL = https://szerelmesszivek.netlify.app/#credits
 
-## Fontos request header
-Minden API híváshoz add hozzá:
-- `X-Site-Key: forrorandi` (vagy `szerelmesszivek`)
+## Price ID-k
+A 6 db Price ID **be van égetve** a kódba (mindkét oldalnak ugyanaz), ezért a `STRIPE_PACKAGES`-t nem muszáj beállítanod.
+Ha mégis át akarod írni, akkor Render ENV-ben felülírhatod `STRIPE_PACKAGES`-szel (JSON).
 
-## Socket.IO kliens
-Csatlakozás:
-- URL: `https://YOUR-RENDER.onrender.com`
-- auth: `{ token: "JWT", siteKey: "forrorandi" }`
-
-Események:
-- `user:new`
-- `message:new`
-- `conversation:assigned`
-
-## API végpontok (röviden)
-- `POST /v1/auth/register` (user)
-- `POST /v1/auth/login` (user)
-- `POST /v1/auth/staff-login` (operator/supervisor)
-- `GET /v1/me`
-- `GET /v1/credits/packages`
-- `POST /v1/credits/checkout`
-- `POST /v1/stripe/webhook`
-- `POST /v1/chat/send`
-- `GET /v1/operator/inbox`
-- `POST /v1/operator/conversations/:id/assign`
-- `POST /v1/operator/conversations/:id/reply`
+## Stripe webhook
+Stripe Dashboard → Webhooks:
+- Endpoint: https://dating-2-7jsh.onrender.com/v1/stripe/webhook
+- Event: checkout.session.completed
